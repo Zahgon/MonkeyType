@@ -21,26 +21,7 @@ DEFAULT_TABLE = "monkeytype_call_traces"
 def create_call_trace_table(
     conn: sqlite3.Connection, table: str = DEFAULT_TABLE
 ) -> None:
-    queries = [
-        """
-        CREATE TABLE IF NOT EXISTS {table} (
-          created_at  TEXT,
-          module      TEXT,
-          qualname    TEXT,
-          arg_types   TEXT,
-          return_type TEXT,
-          yield_type  TEXT);
-        """,
-        """
-        -- This index speeds up lookups of call traces of a single module
-        -- (see `make_query()`).
-        CREATE INDEX IF NOT EXISTS {table}_module ON {table} (module);
-        """,
-    ]
-
-    with conn:
-        for query in queries:
-            conn.execute(query.format(table=table))
+    pass
 
 
 QueryValue = Union[str, int]
@@ -50,25 +31,7 @@ ParameterizedQuery = Tuple[str, List[QueryValue]]
 def make_query(
     table: str, module: str, qualname: Optional[str], limit: int
 ) -> ParameterizedQuery:
-    raw_query = """
-    SELECT
-        module, qualname, arg_types, return_type, yield_type
-    FROM {table}
-    WHERE
-        module == ?
-    """.format(table=table)
-    values: List[QueryValue] = [module]
-    if qualname is not None:
-        raw_query += " AND qualname LIKE ? || '%'"
-        values.append(qualname)
-    raw_query += """
-    GROUP BY
-        module, qualname, arg_types, return_type, yield_type
-    ORDER BY date(created_at) DESC
-    LIMIT ?
-    """
-    values.append(limit)
-    return raw_query, values
+    pass
 
 
 class SQLiteStore(CallTraceStore):
@@ -78,9 +41,7 @@ class SQLiteStore(CallTraceStore):
 
     @classmethod
     def make_store(cls, connection_string: str) -> "CallTraceStore":
-        conn = sqlite3.connect(connection_string)
-        create_call_trace_table(conn)
-        return cls(conn)
+        pass
 
     def add(self, traces: Iterable[CallTrace]) -> None:
         values = []
@@ -106,20 +67,7 @@ class SQLiteStore(CallTraceStore):
     def filter(
         self, module: str, qualname_prefix: Optional[str] = None, limit: int = 2000
     ) -> List[CallTraceThunk]:
-        sql_query, values = make_query(self.table, module, qualname_prefix, limit)
-        with self.conn:
-            cur = self.conn.cursor()
-            cur.execute(sql_query, values)
-            return [CallTraceRow(*row) for row in cur.fetchall()]
+        pass
 
     def list_modules(self) -> List[str]:
-        with self.conn:
-            cur = self.conn.cursor()
-            cur.execute(
-                """
-                        SELECT module FROM {table}
-                        GROUP BY module
-                        ORDER BY date(created_at) DESC
-                        """.format(table=self.table)
-            )
-            return [row[0] for row in cur.fetchall() if row[0]]
+        pass

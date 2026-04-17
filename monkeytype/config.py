@@ -37,7 +37,7 @@ class Config(metaclass=ABCMeta):
         `command` is the name of the command passed to monkeytype
         ('run', 'apply', etc).
         """
-        yield
+        pass
 
     def trace_logger(self) -> CallTraceLogger:
         """Return the CallTraceLogger for logging call traces.
@@ -45,7 +45,7 @@ class Config(metaclass=ABCMeta):
         By default, returns a CallTraceStoreLogger that logs to the configured
         trace store.
         """
-        return CallTraceStoreLogger(self.trace_store())
+        pass
 
     def code_filter(self) -> Optional[CodeFilter]:
         """Return the (optional) CodeFilter predicate for triaging calls.
@@ -54,7 +54,7 @@ class Config(metaclass=ABCMeta):
         boolean determining whether the call should be traced or not. If None is
         returned, all calls will be traced and logged.
         """
-        return None
+        pass
 
     def sample_rate(self) -> Optional[int]:
         """Return the sample rate for call tracing.
@@ -62,19 +62,19 @@ class Config(metaclass=ABCMeta):
         By default, all calls will be traced. If an integer sample rate of N is
         set, 1/N calls will be traced.
         """
-        return None
+        pass
 
     def type_rewriter(self) -> TypeRewriter:
         """Return the type rewriter for use when generating stubs."""
-        return NoOpRewriter()
+        pass
 
     def query_limit(self) -> int:
         """Maximum number of traces to query from the call trace store."""
-        return 2000
+        pass
 
     def max_typed_dict_size(self) -> int:
         """Size up to which a dictionary will be traced as a TypedDict."""
-        return 0
+        pass
 
 
 lib_paths = {sysconfig.get_path(n) for n in ["stdlib", "purelib", "platlib"]}
@@ -88,41 +88,20 @@ LIB_PATHS = tuple(pathlib.Path(p).resolve() for p in lib_paths if p is not None)
 
 
 def _startswith(a: pathlib.Path, b: pathlib.Path) -> bool:
-    try:
-        return bool(a.relative_to(b))
-    except ValueError:
-        return False
+    pass
 
 
 @functools.lru_cache(maxsize=8192)
 def default_code_filter(code: CodeType) -> bool:
     """A CodeFilter to exclude stdlib and site-packages."""
-    # Filter code without a source file
-    if not code.co_filename or code.co_filename[0] == "<":
-        return False
-
-    filename = pathlib.Path(code.co_filename).resolve()
-    # if MONKEYTYPE_TRACE_MODULES is defined, trace only specified packages or modules
-    trace_modules_str = os.environ.get("MONKEYTYPE_TRACE_MODULES")
-    if trace_modules_str is not None:
-        trace_modules = trace_modules_str.split(",")
-        # try to remove lib_path to only check package and module names
-        for lib_path in LIB_PATHS:
-            try:
-                filename = filename.relative_to(lib_path)
-                break
-            except ValueError:
-                pass
-        return any(m == filename.stem or m in filename.parts for m in trace_modules)
-    else:
-        return not any(_startswith(filename, lib_path) for lib_path in LIB_PATHS)
+    pass
 
 
 class DefaultConfig(Config):
     DB_PATH_VAR = "MT_DB_PATH"
 
     def type_rewriter(self) -> TypeRewriter:
-        return DEFAULT_REWRITER
+        pass
 
     def trace_store(self) -> CallTraceStore:
         """By default we store traces in a local SQLite database.
@@ -130,12 +109,11 @@ class DefaultConfig(Config):
         The path to this database file can be customized via the `MT_DB_PATH`
         environment variable.
         """
-        db_path = os.environ.get(self.DB_PATH_VAR, "monkeytype.sqlite3")
-        return SQLiteStore.make_store(db_path)
+        pass
 
     def code_filter(self) -> CodeFilter:
         """Default code filter excludes standard library & site-packages."""
-        return default_code_filter
+        pass
 
 
 def get_default_config() -> Config:
@@ -144,8 +122,4 @@ def get_default_config() -> Config:
     monkeytype_config is not a module that is part of the monkeytype
     distribution, it must be created by the user.
     """
-    try:
-        import monkeytype_config  # type: ignore[import-not-found]
-    except ImportError:
-        return DefaultConfig()
-    return monkeytype_config.CONFIG  # type: ignore[no-any-return]
+    pass

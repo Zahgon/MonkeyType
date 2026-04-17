@@ -38,15 +38,7 @@ TypeDict = Dict[str, Any]
 
 
 def typed_dict_to_dict(typ: type) -> TypeDict:
-    elem_types: Dict[str, Any] = {}
-    for k, v in typ.__annotations__.items():
-        elem_types[k] = type_to_dict(v)
-    return {
-        "module": typ.__module__,
-        "qualname": typ.__qualname__,
-        "elem_types": elem_types,
-        "is_typed_dict": True,
-    }
+    pass
 
 
 def type_to_dict(typ: type) -> TypeDict:
@@ -56,32 +48,7 @@ def type_to_dict(typ: type) -> TypeDict:
         1. Be encodable as JSON
         2. Contain enough information to let us reify the type
     """
-    if is_typed_dict(typ):
-        return typed_dict_to_dict(typ)
-
-    # Union and Any are special cases that aren't actually types.
-    if is_union(typ):
-        qualname = "Union"
-    elif is_any(typ):
-        qualname = "Any"
-    elif is_generic(typ):
-        qualname = qualname_of_generic(typ)
-    else:
-        qualname = typ.__qualname__
-    d: TypeDict = {
-        "module": typ.__module__,
-        "qualname": qualname,
-    }
-    elem_types = getattr(typ, "__args__", None)
-    # In Python < 3.9, bare generics still have args
-    is_bare_generic = typ in {Dict, List, Tuple}
-    if not is_bare_generic and elem_types is not None and is_generic(typ):
-        # empty typing.Tuple is weird; the spec says it should be Tuple[()],
-        # which results in __args__ of `((),)` pre-Python 3.11
-        if elem_types == ((),):
-            elem_types = ()
-        d["elem_types"] = [type_to_dict(t) for t in elem_types]
-    return d
+    pass
 
 
 _HIDDEN_BUILTIN_TYPES: Dict[str, type] = {
@@ -93,9 +60,7 @@ _HIDDEN_BUILTIN_TYPES: Dict[str, type] = {
 
 
 def typed_dict_from_dict(d: TypeDict) -> type:
-    return TypedDict(
-        d["qualname"], {k: type_from_dict(v) for k, v in d["elem_types"].items()}
-    )
+    pass
 
 
 def type_from_dict(d: TypeDict) -> type:
@@ -105,68 +70,41 @@ def type_from_dict(d: TypeDict) -> type:
         NameLookupError if we can't reify the specified type
         InvalidTypeError if the named type isn't actually a type
     """
-    module, qualname = d["module"], d["qualname"]
-    if d.get("is_typed_dict", False):
-        return typed_dict_from_dict(d)
-    if module == "builtins" and qualname in _HIDDEN_BUILTIN_TYPES:
-        typ = _HIDDEN_BUILTIN_TYPES[qualname]
-    else:
-        typ = get_name_in_module(module, qualname)
-    if not (isinstance(typ, type) or is_any(typ) or is_generic(typ)):
-        raise InvalidTypeError(
-            f"Attribute specified by '{qualname}' in module '{module}' "
-            f"is of type {type(typ)}, not type."
-        )
-    elem_type_dicts = d.get("elem_types")
-    if elem_type_dicts is not None and is_generic(typ):
-        elem_types = tuple(type_from_dict(e) for e in elem_type_dicts)
-        # mypy complains that a value of type `type` isn't indexable. That's
-        # true, but we know typ is a subtype that is indexable. Even checking
-        # with hasattr(typ, '__getitem__') doesn't help
-        typ = typ[elem_types]  # type: ignore[index]
-    return typ
+    pass
 
 
 def type_to_json(typ: type) -> str:
     """Encode the supplied type as json using type_to_dict."""
-    type_dict = type_to_dict(typ)
-    return json.dumps(type_dict, sort_keys=True)
+    pass
 
 
 def type_from_json(typ_json: str) -> type:
     """Reify a type from the format produced by type_to_json."""
-    type_dict = json.loads(typ_json)
-    return type_from_dict(type_dict)
+    pass
 
 
 def arg_types_to_json(arg_types: Dict[str, type]) -> str:
     """Encode the supplied argument types as json"""
-    type_dict = {name: type_to_dict(typ) for name, typ in arg_types.items()}
-    return json.dumps(type_dict, sort_keys=True)
+    pass
 
 
 def arg_types_from_json(arg_types_json: str) -> Dict[str, type]:
     """Reify the encoded argument types from the format produced by arg_types_to_json."""
-    arg_types = json.loads(arg_types_json)
-    return {name: type_from_dict(type_dict) for name, type_dict in arg_types.items()}
+    pass
 
 
 TypeEncoder = Callable[[type], str]
 
 
 def maybe_encode_type(encode: TypeEncoder, typ: Optional[type]) -> Optional[str]:
-    if typ is None:
-        return None
-    return encode(typ)
+    pass
 
 
 TypeDecoder = Callable[[str], type]
 
 
 def maybe_decode_type(decode: TypeDecoder, encoded: Optional[str]) -> Optional[type]:
-    if (encoded is None) or (encoded == "null"):
-        return None
-    return decode(encoded)
+    pass
 
 
 CallTraceRowT = TypeVar("CallTraceRowT", bound="CallTraceRow")
@@ -191,19 +129,10 @@ class CallTraceRow(CallTraceThunk):
 
     @classmethod
     def from_trace(cls: Type[CallTraceRowT], trace: CallTrace) -> CallTraceRowT:
-        module = trace.func.__module__
-        qualname = trace.func.__qualname__
-        arg_types = arg_types_to_json(trace.arg_types)
-        return_type = maybe_encode_type(type_to_json, trace.return_type)
-        yield_type = maybe_encode_type(type_to_json, trace.yield_type)
-        return cls(module, qualname, arg_types, return_type, yield_type)
+        pass
 
     def to_trace(self) -> CallTrace:
-        function = get_func_in_module(self.module, self.qualname)
-        arg_types = arg_types_from_json(self.arg_types)
-        return_type = maybe_decode_type(type_from_json, self.return_type)
-        yield_type = maybe_decode_type(type_from_json, self.yield_type)
-        return CallTrace(function, arg_types, return_type, yield_type)
+        pass
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, CallTraceRow):
@@ -230,8 +159,4 @@ def serialize_traces(traces: Iterable[CallTrace]) -> Iterable[CallTraceRow]:
     lose all traces.
 
     """
-    for trace in traces:
-        try:
-            yield CallTraceRow.from_trace(trace)
-        except Exception:
-            logger.exception("Failed to serialize trace")
+    pass
